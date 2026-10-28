@@ -12,7 +12,9 @@ TaskFlow is a full-stack demo built for Aulten Digital Private Limited’s pract
 - **API reference:** https://taskflow-employee-dashboard.vercel.app/openapi.yaml
 - **GitHub:** https://github.com/utsavrana9213/Employee-Task-Dashboard
 
-Employees can create an account from the website. The hosted production admin password is stored as a private Vercel secret and is intentionally not published in this public repository. Ask the project owner for hosted admin access if you need to review the admin area.
+Employees can create an account from the website. The hosted production admin password is Demo sign-ins:
+- Admin: admin@gmail.com / 12345678
+- Employee: alex@taskflow.demo / Demo1234!
 
 ## How it meets the assignment
 
@@ -62,7 +64,7 @@ Inquiry replies appear inside TaskFlow. The demo does not send email.
 
 | Area | Technology | What it does |
 | --- | --- | --- |
-| Frontend | JavaScript, React 18, React Router | Renders the employee and admin pages and handles navigation. |
+| Frontend | JavaScript, React , React Router | Renders the employee and admin pages and handles navigation. |
 | Build and local web server | Vite | Runs the frontend during development and creates the production files. |
 | API backend | Node.js and Express | Provides the REST endpoints and enforces access rules. |
 | Validation and security | Zod, bcryptjs, JWT, HttpOnly cookies, express-rate-limit | Checks request data, hashes passwords, protects sessions, and limits repeated sign-in attempts. |
@@ -85,7 +87,7 @@ The **admin account below is local-development only**. The employee accounts are
 
 | Role | Email | Password | Sign-in page |
 | --- | --- | --- | --- |
-| Admin | `admin@gmail.com` | `1234` | `http://localhost:5173/admin/login` |
+| Admin | `admin@gmail.com` | `12345678` | `http://localhost:5173/admin/login` |
 | Employee — Alex | `alex@taskflow.demo` | `Demo1234!` | `http://localhost:5173/` |
 | Employee — Jamie | `jamie@taskflow.demo` | `Demo1234!` | `http://localhost:5173/` |
 | Employee — Taylor | `taylor@taskflow.demo` | `Demo1234!` | `http://localhost:5173/` |
