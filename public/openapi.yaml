@@ -1,0 +1,294 @@
+openapi: 3.1.0
+info:
+  title: TaskFlow Employee Task Dashboard API
+  version: 1.0.0
+  description: >-
+    REST API for the employee dashboard. CRM and Helpdesk tasks are mock source
+    records served from TaskFlow's demo database.
+servers:
+  - url: http://localhost:4000/api
+    description: Local Express API
+  - url: https://taskflow-employee-dashboard.vercel.app/api
+    description: Public Vercel production API
+  - url: https://{deploymentHost}/api
+    description: Vercel deployment
+    variables:
+      deploymentHost:
+        default: taskflow.example.com
+        description: Replace with the deployed Vercel hostname.
+paths:
+  /health:
+    get:
+      summary: Check API and database health
+      responses:
+        '200':
+          description: API and database are available.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, service, database, tasks, timestamp]
+                properties:
+                  ok: { type: boolean, example: true }
+                  service: { type: string, example: TaskFlow API }
+                  database: { type: string, example: connected }
+                  tasks: { type: integer, example: 20 }
+                  timestamp: { type: string, format: date-time }
+  /auth/login:
+    post:
+      summary: Sign in an employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Signed in; sets the HttpOnly taskflow_session cookie.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /admin/login:
+    post:
+      summary: Sign in an administrator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Signed in; sets the HttpOnly taskflow_session cookie.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/logout:
+    post:
+      summary: Sign out and clear the session cookie
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Session cookie cleared.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+  /crm/tasks:
+    get:
+      summary: List mock CRM tasks
+      description: Employees see only their own tasks. Admins may optionally filter by employeeId.
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Urgency'
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Sort'
+      responses:
+        '200':
+          description: Filtered CRM tasks.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /helpdesk/tasks:
+    get:
+      summary: List mock Helpdesk tasks
+      description: Employees see only their own tasks. Admins may optionally filter by employeeId.
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Urgency'
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Sort'
+      responses:
+        '200':
+          description: Filtered Helpdesk tasks.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /tasks:
+    get:
+      summary: List tasks across both sources
+      description: Employees see their own tasks; admins may filter by employeeId.
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Source'
+        - $ref: '#/components/parameters/Urgency'
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Sort'
+      responses:
+        '200':
+          description: Filtered tasks from CRM and Helpdesk.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /tasks/{id}:
+    get:
+      summary: Get a task and its history
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Task details and task history.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: Task not found or not visible to this employee.
+  /admin/tasks:
+    get:
+      summary: List and filter all tasks (admin)
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EmployeeId'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Source'
+        - $ref: '#/components/parameters/Urgency'
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Sort'
+      responses:
+        '200':
+          description: Filtered workspace tasks.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/tasks/{id}:
+    patch:
+      summary: Update task status, urgency, deadline, or assignee (admin)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                status: { type: string, enum: [Pending, In Progress, Completed] }
+                urgency: { type: string, enum: [Critical, High, Medium, Low] }
+                deadline: { type: string, format: date-time }
+                employeeId: { type: string }
+      responses:
+        '200': { description: Task updated and saved to the TaskFlow demo database. }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Task not found. }
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: taskflow_session
+  parameters:
+    EmployeeId:
+      name: employeeId
+      in: query
+      description: Admin-only employee filter, for example emp-alex.
+      schema: { type: string }
+    Status:
+      name: status
+      in: query
+      schema: { type: string, enum: [Pending, In Progress, Completed] }
+    Source:
+      name: source
+      in: query
+      schema: { type: string, enum: [CRM, Helpdesk] }
+    Urgency:
+      name: urgency
+      in: query
+      schema: { type: string, enum: [Critical, High, Medium, Low] }
+    Search:
+      name: search
+      in: query
+      schema: { type: string, maxLength: 120 }
+    Sort:
+      name: sort
+      in: query
+      schema: { type: string, enum: [deadline, deadline_desc, urgency, newest], default: deadline }
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        fullName: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [employee, admin] }
+        status: { type: string, enum: [active, inactive] }
+    Task:
+      type: object
+      properties:
+        id: { type: string, example: CRM-2401 }
+        title: { type: string }
+        description: { type: string }
+        employee_id: { type: string, example: emp-alex }
+        employee_name: { type: string }
+        status: { type: string, enum: [Pending, In Progress, Completed] }
+        urgency: { type: string, enum: [Critical, High, Medium, Low] }
+        deadline: { type: string, format: date-time }
+        source: { type: string, enum: [CRM, Helpdesk] }
+        source_url: { type: string }
+    TaskList:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items: { $ref: '#/components/schemas/Task' }
+        count: { type: integer }
+        filters: { type: object, additionalProperties: true }
+  responses:
+    BadRequest:
+      description: Invalid request or query parameter.
+    Unauthorized:
+      description: Sign in is required or the session has expired.
+    Forbidden:
+      description: The signed-in user does not have permission for this resource.
